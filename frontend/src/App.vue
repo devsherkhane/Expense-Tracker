@@ -1,69 +1,115 @@
-<template>
-  <div class="container">
-
-    <h1>Expense Tracker</h1>
-
-    <input v-model="title" placeholder="Title" />
-    <input v-model="amount" type="number" placeholder="Amount" />
-    <input v-model="category" placeholder="Category" />
-    <input v-model="date" type="date" />
-
-    <button @click="addExpense">Add</button>
-
-    <ul>
-      <li v-for="e in expenses" :key="e.id">
-        {{ e.title }} - ₹{{ e.amount }} ({{ e.category }})
-        <button @click="deleteExpense(e.id)">X</button>
-      </li>
-    </ul>
-
-  </div>
-</template>
-
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 
 const expenses = ref([])
-
-const title = ref('')
-const amount = ref('')
-const category = ref('')
-const date = ref('')
+// Keeping the monthly budget logic to help with your student budget
+const monthlyBudget = ref(1500) 
+const form = ref({ 
+  title: '', 
+  amount: null, 
+  category: '', 
+  date: new Date().toISOString().substr(0, 10) 
+})
 
 const API = "http://localhost:8080/expenses"
 
+const totalAmount = computed(() => {
+  return expenses.value.reduce((sum, e) => sum + (e.amount || 0), 0)
+})
+
 const loadExpenses = async () => {
-  const res = await axios.get(API)
-  expenses.value = res.data
+  try {
+    const res = await axios.get(API)
+    // Map backend 'id' to 'id' for frontend consistency
+    expenses.value = res.data || []
+  } catch (err) {
+    console.error("Load failed", err)
+  }
 }
 
-const addExpense = async () => {
-  await axios.post(API, {
-    title: title.value,
-    amount: amount.value,
-    category: category.value,
-    date: date.value
-  })
-
-  loadExpenses()
+const handleAdd = async () => {
+  if (!form.value.title || !form.value.amount || !form.value.category) return
+  try {
+    await axios.post(API, form.value)
+    form.value = { title: '', amount: null, category: '', date: new Date().toISOString().substr(0, 10) }
+    await loadExpenses()
+  } catch (err) {
+    console.error("Add failed", err)
+  }
 }
 
-const deleteExpense = async (id) => {
-  await axios.delete(`${API}/${id}`)
-  loadExpenses()
+const deleteEntry = async (id) => {
+  if (confirm("Remove this item?")) {
+    try {
+      await axios.delete(`${API}/${id}`)
+      await loadExpenses()
+    } catch (err) {
+      console.error("Delete failed", err)
+    }
+  }
 }
 
 onMounted(loadExpenses)
 </script>
 
-<style>
-.container {
-  width: 400px;
-  margin: auto;
-}
-input {
-  display: block;
-  margin: 5px;
+<template>
+  <div id="app">
+    <h1>Expense Tracker</h1>
+    
+    <div class="container">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 1.5rem; align-items: baseline;">
+        <span style="font-weight: 700; opacity: 0.7; font-size: 0.9rem; text-transform: uppercase;">Total Spent</span>
+        <span style="font-size: 1.5rem; font-weight: 800; color: var(--primary);">₹{{ totalAmount.toFixed(2) }}</span>
+      </div>
+
+      <div class="form-group">
+        <input v-model="form.title" type="text" placeholder="What did you buy?" />
+        
+        <div style="display: flex; gap: 10px;">
+          <input v-model.number="form.amount" type="number" placeholder="Amount" />
+          <select v-model="form.category">
+            <option value="" disabled>Category</option>
+            <option>Food</option>
+            <option>Travel</option>
+            <option>Bills</option>
+            <option>Shopping</option>
+          </select>
+        </div>
+        
+        <button @click="handleAdd" style="width: 100%;">
+          Add Transaction
+        </button>
+      </div>
+
+      <ul>
+        <li v-for="e in expenses" :key="e.id" >
+          <div style="display: flex; flex-direction: column;">
+            <span style="font-weight: 700; font-size: 1rem; color: black;">{{ e.title }}</span>
+            <span style="font-size: 0.75rem; color: #94a3b8; font-family: monospace; color: black;">{{ e.date }} • {{ e.category }}</span>
+          </div>
+          
+          <div style="display: flex; align-items: center; gap: 1rem;">
+            <span style="font-weight: 700; color: var(--text-main); color: black;">₹{{ e.amount }}</span>
+            <button @click="deleteEntry(e.id)" class="delete-btn">
+              Delete
+            </button>
+          </div>
+        </li>
+      </ul>
+
+      <div v-if="expenses.length === 0" style="text-align: center; padding: 2rem; color: #94a3b8; font-style: italic;">
+        No records yet.
+      </div>
+    </div>
+  </div>
+</template>
+
+<style scoped>
+/* Scoped styles to ensure the specific layout behavior you requested */
+.form-group {
+  margin-bottom: 2rem;
+  padding-bottom: 2rem;
+  border-bottom: 2px dashed #f1f5f9;
 }
 </style>
