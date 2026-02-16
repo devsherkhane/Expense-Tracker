@@ -3,8 +3,6 @@ import { ref, computed, onMounted } from 'vue'
 import axios from 'axios'
 
 const expenses = ref([])
-// Keeping the monthly budget logic to help with your student budget
-const monthlyBudget = ref(1500) 
 const form = ref({ 
   title: '', 
   amount: null, 
@@ -21,7 +19,6 @@ const totalAmount = computed(() => {
 const loadExpenses = async () => {
   try {
     const res = await axios.get(API)
-    // Map backend 'id' to 'id' for frontend consistency
     expenses.value = res.data || []
   } catch (err) {
     console.error("Load failed", err)
@@ -106,7 +103,6 @@ onMounted(loadExpenses)
 </template>
 
 <style scoped>
-/* Scoped styles to ensure the specific layout behavior you requested */
 .form-group {
   margin-bottom: 2rem;
   padding-bottom: 2rem;
