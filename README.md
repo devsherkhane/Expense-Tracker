@@ -29,3 +29,4 @@ This project allows users to manage daily expenses by adding, viewing, and delet
 - Vue.js (Vue 3)
 - Vite
 - Axios
+---
