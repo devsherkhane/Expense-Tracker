@@ -2,6 +2,7 @@
 
 A lightweight, high-performance Expense Tracker designed to manage daily financial records. This project serves as a robust example of a modern full-stack application using a Go backend and a Vue.js frontend, with persistent storage managed by MySQL.
 
+
 ---
 
 ##  Features
